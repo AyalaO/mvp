@@ -1,0 +1,8 @@
+streamlit
+streamlit-chat
+openai
+requests
+Image
+langchain 
+st-gsheets-connection
+pandas
