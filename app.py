@@ -1,4 +1,4 @@
-# my first app
+# my first app 
 import streamlit as st
 import pandas as pd
 import openai
@@ -27,7 +27,7 @@ weeks = [
     "8: Move Mindfully"
 ]
 
-# read in practices per week, full version
+# read in practices per week, full version 
 practices = {}
 for i in weeks:
     with open(f'practices/week_{i[0]}.txt', "r") as file:
@@ -45,35 +45,25 @@ for i in weeks:
     with open(f'prompts/week_{i[0]}.txt', "r") as file:
         system_prompts[i] = file.read()
 
-# set-up sidebar layout
-st.markdown("""
-<style>
-    [data-testid=stSidebar] {
-        background-color: #D8BFA3;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.sidebar.image("imgs/logo_apple.png")
-
-# st.sidebar.text_input("Your name", key="name")
+st.sidebar.image("imgs/logo_bitewise.png")
 st.sidebar.text_input("Your goal", key="goal")
 st.sidebar.text_input("Your real why", key="why")
-
-# # show dropdown menu with weeks
-# week_drop = st.sidebar.selectbox(
-#     'Which week are you in?', 
-#     weeks)
-# 'You are in week: ', week_drop
-
 # add some spacing
 st.sidebar.write('')
-
 # show radio button per week
 week = st.sidebar.radio('Which week are you in?', weeks)
 latest_reply_for_week = 'initiate'
 
-st.subheader(week[3:])
+
+# set-up main page layout
+st.markdown(
+    f"""
+    <span style="font-size:30px; color:#44D07A; font-weight:bold;">
+        {week[3:]}
+    </span>
+    """,
+    unsafe_allow_html=True
+)
 
 week_intro_prompt = f"""
 You are a CBT and mindfulness coach helping users to lose weight. 
@@ -83,7 +73,7 @@ The practice for the week is {practices[week]}.
 
 Your task:
 1. Provide a short, welcoming introduction to this week.
-2. Briefly explain how this contributes to the user's goals.
+2. Concisely explain how the upcoming week's activities will help the user progress toward their goals. 
 4. Offer encouragement to reach out during challenges or for insights.
 
 Tone:
@@ -97,7 +87,6 @@ Return exactly one valid JSON object with the following 3 keys:
 - "why_does_this_matter_for_me"
 - "encouragement_to_chat"
 
-Use markdown to layout the text
 No other text or keys outside of this JSON object. Return exactly one valid JSON object and nothing else—no markdown, no extra text.
 """
 
@@ -106,30 +95,62 @@ class WeekIntro(BaseModel):
      why_does_this_matter_for_me: str
      encouragement_to_chat: str
 
-if week != latest_reply_for_week:
-    try:
-            model_engine = "gpt-4o"
-            response = client.beta.chat.completions.parse(
-                model=model_engine,
-                messages=[
-                    {"role": "system", "content": week_intro_prompt},
-                    {"role": "user", "content": f'My goal is to {st.session_state.goal}. Because I want to {st.session_state.why}'}
-                ],
-                response_format = WeekIntro
-            )
-            week_intro = response.choices[0].message.content
-            
-            latest_reply_for_week = week 
+try:
+    model_engine = "gpt-4o"
+    response = client.beta.chat.completions.parse(
+        model=model_engine,
+        messages=[
+            {"role": "system", "content": week_intro_prompt},
+            {"role": "user", "content": f'My goal is to {st.session_state.goal}. Because I want to {st.session_state.why}'}
+        ],
+        response_format = WeekIntro
+    )
+    week_intro = response.choices[0].message.content
+    week_intro_dict = json.loads(week_intro)
 
-    except openai.OpenAIError as e:
-        logging.error(f"Error occurred: {e}")
-        st.error(f"OpenAI Error: {str(e)}")
+except openai.OpenAIError as e:
+    logging.error(f"Error occurred: {e}")
+    st.error(f"OpenAI Error: {str(e)}")
 
 # show intro
-week_intro_dict = json.loads(week_intro)
-st.write(week_intro_dict['intro_to_the_week'])
-st.write('**How will this help me?**')
-st.write(week_intro_dict['why_does_this_matter_for_me'])
-with st.expander("**Show practice of the week**", expanded=False, icon="🎯"):
-    st.write(practices_display[week])
-st.write(week_intro_dict['encouragement_to_chat'])
+st.markdown(f"""<span style="color:#26293A;">
+            {week_intro_dict['intro_to_the_week']}</span>""", unsafe_allow_html=True)
+st.write("")
+st.markdown(f"""<span style="color:#26293A; font-weight:bold;">
+            How will this help me?</span>""", unsafe_allow_html=True)
+st.markdown(f"""<span style="color:#26293A;">
+            {week_intro_dict['why_does_this_matter_for_me']}</span>""", unsafe_allow_html=True)
+
+# Inject CSS to modify the expander’s background color
+st.markdown(
+    """
+    <style>
+    /* Target the entire container of the expander */
+    [data-testid="stExpander"] {
+        background-color: #44D07A !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+    }
+
+    /* Target the header text inside the expander */
+    [data-testid="stExpander"] .streamlit-expanderHeader {
+        color: #26293A !important;
+        font-weight: bold; 
+    }
+
+    /* Target the content area inside the expander */
+    [data-testid="stExpander"] .streamlit-expanderContent {
+        background-color: #fff !important;  /* Example: white content area */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+with st.expander("**Show practice of the week**", expanded=False, icon="💚"):
+    st.markdown(f"""<span style="color:#26293A;">
+            {practices_display[week]}</span>""", unsafe_allow_html=True)
+
+st.markdown(f"""<span style="color:#26293A;">
+            {week_intro_dict['encouragement_to_chat']}</span>""", unsafe_allow_html=True)
+
