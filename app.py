@@ -157,7 +157,7 @@ def setup_side_bar():
     # add some spacing
     st.sidebar.write('')
     # show radio button per week
-    st.session_state.week = st.sidebar.radio('Which week are you in?', weeks, disabled=False)
+    st.session_state.week = st.sidebar.radio('Which week are you in?', weeks, disabled=True)
 
 def setup_main_page():
     # set-up main page layout
