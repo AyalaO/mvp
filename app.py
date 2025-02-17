@@ -152,12 +152,12 @@ def initialize_session_state():
 def setup_side_bar():
     # set-up side bar
     st.sidebar.image("imgs/logo_bitewise.png")
-    st.sidebar.text_input("Your goal", key="goal")
-    st.sidebar.text_input("Your real why", key="why")
+    # st.sidebar.text_input("Your goal", key="goal")
+    # st.sidebar.text_input("Your real why", key="why")
     # add some spacing
     st.sidebar.write('')
     # show radio button per week
-    st.session_state.week = st.sidebar.radio('Which week are you in?', weeks, disabled=True)
+    st.session_state.week = st.sidebar.radio('Which week are you in?', weeks, disabled=False)
 
 def setup_main_page():
     # set-up main page layout
@@ -176,7 +176,7 @@ def setup_main_page():
             model=model_engine,
             messages=[
                 {"role": "system", "content": week_intro_prompt},
-                {"role": "user", "content": f'My goal is to {st.session_state.goal}. Because I want to {st.session_state.why}'}
+                # {"role": "user", "content": f'My goal is to {st.session_state.goal}. Because I want to {st.session_state.why}'}
             ],
             response_format = WeekIntro
         )
@@ -222,15 +222,6 @@ def main():
     """
     Handle the chat interface.
     """
-    initialize_session_state()
-    setup_side_bar()
-    setup_main_page()
-
-    if not st.session_state.history:
-        initial_bot_message = "Hi, how is it going?"
-        st.session_state.history.append({"role": "assistant", "content": initial_bot_message})
-        st.session_state.conversation_history = initialize_conversation(st.session_state.week)
-
     # Insert custom CSS for glowing effect
     st.markdown(
         """
@@ -256,6 +247,20 @@ def main():
         unsafe_allow_html=True,
     )
 
+    initialize_session_state()
+    setup_side_bar()
+    setup_main_page()
+
+    if not st.session_state.history:
+        initial_bot_message = "Ask me anything..."
+        st.session_state.history.append({"role": "assistant", "content": initial_bot_message})
+        st.session_state.conversation_history = initialize_conversation(st.session_state.week)
+    
+    chat_input = st.chat_input("...")
+    if chat_input:
+        on_chat_submit(chat_input)
+
+
     with st.expander("**Chat**", expanded=False, icon="🧡"):
         for message in st.session_state.history[-NUMBER_OF_MESSAGES_TO_DISPLAY:]:
             role = message["role"]
@@ -264,10 +269,8 @@ def main():
                 st.write(message["content"])
         else:
             print("Error in chat printing")
-        chat_input = st.chat_input("...")
+        
     
-    if chat_input:
-        on_chat_submit(chat_input)
 
 if __name__ == "__main__":
     main()
