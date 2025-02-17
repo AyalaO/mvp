@@ -266,7 +266,8 @@ def main():
             print("Error in chat printing")
         chat_input = st.chat_input("...")
     
-    on_chat_submit(chat_input)
+    if chat_input:
+        on_chat_submit(chat_input)
 
 if __name__ == "__main__":
     main()
