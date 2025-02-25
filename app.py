@@ -54,16 +54,36 @@ def initialize_session_state():
     """Initialize session state variables."""
     if "history" not in st.session_state:
         st.session_state.history = []
-    if 'conversation_history' not in st.session_state:
+    if "conversation_history" not in st.session_state:
         st.session_state.conversation_history = []
-    # Ensure we have a default week
+    # Store the previously selected week so we can detect changes
+    if "prev_week" not in st.session_state:
+        st.session_state.prev_week = weeks[0]
     if "week" not in st.session_state:
         st.session_state.week = weeks[0]
 
 def setup_side_bar():
+    """Show the radio for selecting the current week. 
+       If the user changed the selection, reset session state accordingly."""
     st.sidebar.image("imgs/logo_bitewise.png")
-    # Example: make the week read-only in the sidebar:
-    st.session_state.week = st.sidebar.radio('Which week are you in?', weeks, disabled=True)
+
+    selected_week = st.sidebar.radio("Which week are you in?", weeks, index=0, disabled=False)
+
+    # If the user has switched to a new week
+    if selected_week != st.session_state.prev_week:
+        # 1) Clear the stored intro so it will be re-generated
+        if "week_intro_dict" in st.session_state:
+            del st.session_state.week_intro_dict
+        # 2) Reset the chat
+        st.session_state.history = []
+        st.session_state.conversation_history = []
+        # 3) Update the system prompt in the next steps
+        # (will happen automatically in the chat initialization function)
+        # 4) Update the old week 
+        st.session_state.prev_week = selected_week
+    
+    # Update the current week
+    st.session_state.week = selected_week
 
 def get_week_intro_prompt():
     """Return the system prompt for the current week."""
@@ -91,6 +111,7 @@ def get_week_intro_prompt():
 
     No other text or keys outside of this JSON object. Return exactly one valid JSON object and nothing else—no markdown, no extra text.
     """
+
 
 def get_week_intro():
     """
@@ -170,6 +191,7 @@ def setup_main_page():
             unsafe_allow_html=True
         )
     
+     # Chat section
     st.markdown(
         """
         <span style="font-size:30px; color:#FF6632; font-weight:bold;">
@@ -183,6 +205,8 @@ def setup_main_page():
         unsafe_allow_html=True
     )
 
+# ========= Chat Logic ========= #    
+
 def initialize_conversation(system_prompt):
     """Initialize the conversation history with system and assistant messages."""
     assistant_message = "Ask me anything.." 
@@ -194,20 +218,22 @@ def initialize_conversation(system_prompt):
 
 @st.cache_data(show_spinner=False)
 def on_chat_submit(chat_input):
-    """
-    Handle chat input submissions and interact with the OpenAI API.
-    """
-    user_input = chat_input.strip().lower()
+    """Handle user chat submissions."""
+    user_input = chat_input.strip()
+    if not user_input:
+        return
 
-    if 'conversation_history' not in st.session_state:
-        # The system prompt for the chat can be different from the intro prompt.
-        st.session_state.conversation_history = initialize_conversation(
-            system_prompts[st.session_state.week]
-        )
-    
-    # Add user input
+    if "conversation_history" not in st.session_state or not st.session_state.conversation_history:
+        # System prompt from the new week
+        system_prompt = system_prompts[st.session_state.week]
+        st.session_state.conversation_history = initialize_conversation(system_prompt)
+
+    # Add user message
     st.session_state.conversation_history.append({"role": "user", "content": user_input})
     st.session_state.history.append({"role": "user", "content": user_input})
+
+    # Check final prompts
+    print(st.session_state.conversation_history)
 
     # Send to OpenAI
     try:
@@ -225,31 +251,31 @@ def on_chat_submit(chat_input):
     except openai.error.OpenAIError as e:
         st.error(f"OpenAI Error: {str(e)}")
 
-# main app flow
-initialize_session_state()
-setup_side_bar()
-setup_main_page()
 
-# If no previous conversation, add initial message
-if not st.session_state.history:
-    initial_bot_message = "Ask me anything..."
-    st.session_state.history.append({"role": "assistant", "content": initial_bot_message})
-    # use the system prompt for the chat
-    st.session_state.conversation_history = initialize_conversation(
-        system_prompts[st.session_state.week]
-    )
+# ========= Main App ========= #
 
-chat_input = st.chat_input("...")
-if chat_input:
-    on_chat_submit(chat_input)
+def main():
+    initialize_session_state()
+    setup_side_bar()
+    setup_main_page()
 
-# Display conversation
-for message in st.session_state.history[-NUMBER_OF_MESSAGES_TO_DISPLAY:]:
-    role = message["role"]
-    avatar_image = (
-        "imgs/avatar_bitewise.png" if role == "assistant" else 
-        "imgs/profile-user.png" if role == "user" else 
-        None
-    )
-    with st.chat_message(role, avatar=avatar_image):
-        st.write(message["content"])
+    # If no history yet, create an initial bot message
+    if not st.session_state.history:
+        st.session_state.history.append({
+            "role": "assistant", 
+            "content": "Ask me anything..."
+        })
+
+    chat_input = st.chat_input("Type your message here...")
+    if chat_input:
+        on_chat_submit(chat_input)
+
+    # Display conversation
+    for message in st.session_state.history[-20:]:
+        role = message["role"]
+        with st.chat_message(role):
+            st.write(message["content"])
+
+if __name__ == "__main__":
+    main()
+
