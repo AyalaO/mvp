@@ -16,17 +16,30 @@ client = openai.OpenAI()
 # constants
 NUMBER_OF_MESSAGES_TO_DISPLAY = 20
 
+# weeks = [
+#     "0: Preperations",
+#     "1: Pause Before Reacting",
+#     "2: Notice Your Fullness",
+#     "3: Create Clarity and Consistency",
+#     "4: Identify Automatic Thoughts",
+#     "5: Feel Your Emotions Fully",
+#     "6: Practice Self-Compassion",
+#     "7: Letting Go",
+#     "8: Move Mindfully"
+# ]
+
 weeks = [
-    "0: Preperations",
-    "1: Pause Before Reacting",
-    "2: Notice Your Fullness",
-    "3: Create Clarity and Consistency",
-    "4: Identify Automatic Thoughts",
-    "5: Feel Your Emotions Fully",
-    "6: Practice Self-Compassion",
-    "7: Letting Go",
-    "8: Move Mindfully"
+    "0: Introductie",
+    "1: Pauzeer voor je reageert",
+    "2: Let op verzadiging",
+    "3: Duidelijkheid & consistentie",
+    "4: Herken automatische gedachten",
+    "5: Voel emoties volledig",
+    "6: Oefen zelfcompassie",
+    "7: Laat los",
+    "8: Beweeg bewust"
 ]
+
 
 practices = {}
 practices_display = {}
@@ -67,7 +80,7 @@ def setup_side_bar():
        If the user changed the selection, reset session state accordingly."""
     st.sidebar.image("imgs/logo_bitewise.png")
 
-    selected_week = st.sidebar.radio("Which week are you in?", weeks, index=0, disabled=False)
+    selected_week = st.sidebar.radio("Selecteer de week", weeks, index=0, disabled=False)
 
     # If the user has switched to a new week
     if selected_week != st.session_state.prev_week:
@@ -110,6 +123,7 @@ def get_week_intro_prompt():
     - "encouragement_to_chat"
 
     No other text or keys outside of this JSON object. Return exactly one valid JSON object and nothing else—no markdown, no extra text.
+    Make sure your output is in Dutch
     """
 
 
@@ -124,7 +138,7 @@ def get_week_intro():
             response = client.beta.chat.completions.parse(
                 model=model_engine,
                 messages=[ 
-                    {"role": "system", "content": get_week_intro_prompt()},
+                    {"role": "system", "content": get_week_intro_prompt()+'answer in Dutch'},
                 ],
                 response_format=WeekIntro
             )
@@ -163,7 +177,8 @@ def setup_main_page():
     )
     st.write("")
     st.markdown(
-        f"""<span style="color:#26293A; font-weight:bold;">How will this help me?</span>""",
+        #f"""<span style="color:#26293A; font-weight:bold;">How will this help me?</span>""",
+        f"""<span style="color:#26293A; font-weight:bold;">Waarom helpt dit?</span>""",
         unsafe_allow_html=True
     )
     st.markdown(
@@ -185,7 +200,8 @@ def setup_main_page():
         unsafe_allow_html=True
     )
 
-    with st.expander("**Show practice of the week**", expanded=False, icon="🧡"):
+    #with st.expander("**Show practice of the week**", expanded=False):
+    with st.expander("**Toon opdracht van de week**", expanded=False):
         st.markdown(
             f"""<span style="color:#26293A;">{practices_display[st.session_state.week]}</span>""",
             unsafe_allow_html=True
@@ -209,7 +225,8 @@ def setup_main_page():
 
 def initialize_conversation(system_prompt):
     """Initialize the conversation history with system and assistant messages."""
-    assistant_message = "Ask me anything.." 
+    #assistant_message = "Ask me anything.." 
+    assistant_message = "Waarmee kan ik je vandaag helpen?" 
     conversation_history = [
         {"role": "system", "content": system_prompt},
         {"role": "assistant", "content": assistant_message}
@@ -263,10 +280,12 @@ def main():
     if not st.session_state.history:
         st.session_state.history.append({
             "role": "assistant", 
-            "content": "Ask me anything..."
+            #"content": "Ask me anything..."
+            "content": "Waarmee kan ik je vandaag helpen.."
         })
 
-    chat_input = st.chat_input("Type your message here...")
+    chat_input = st.chat_input("Typ hier je bericht...") 
+    #chat_input = st.chat_input("Type your message here...") 
     if chat_input:
         on_chat_submit(chat_input)
 
