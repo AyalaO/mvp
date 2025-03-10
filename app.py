@@ -109,9 +109,11 @@ def setup_side_bar():
         st.session_state.history = []
         st.session_state.conversation_history = []
         # 2) Update the system prompt in the next steps
-        # (will happen automatically in the chat initialization function)
+        # will happen automatically in the chat initialization function
         # 3) Update the old week 
         st.session_state.prev_week = selected_week
+        # 4) Generate a new session_id so you can log new chat independently
+        st.session_state.session_id = str(uuid.uuid4())
     
     # Update the current week
     st.session_state.week = selected_week
@@ -180,6 +182,32 @@ def setup_main_page():
         )
 
 # ========= Chat Logic ========= #    
+
+@st.cache_data(show_spinner=False)
+def log_conversation(latest_chat_state):
+    # format logs
+    latest_chat_state_clean = "  ".join(
+                    interaction['role'] + ' : ' + interaction['content']
+                    for interaction in latest_chat_state
+                    )
+    new_log_entry = [datetime.now().strftime("%Y/%m/%d %H:%M:%S"), 
+                    st.session_state.session_id, 
+                    st.session_state.week,
+                    latest_chat_state_clean]
+    print(new_log_entry)
+    print(f'length new entry is {len(new_log_entry)}')
+    # read in sheet
+    df_logs = conn.read(worksheet="chat_logs", usecols=[0,1,2,3], ttl=0)
+    index_session = df_logs.index[df_logs['session_id'] == st.session_state.session_id].tolist()
+    if not index_session:
+        # session not logged before yet, append logs on new row
+        df_logs.loc[len(df_logs)] = new_log_entry
+    else:
+        # session already logged before, replace existing row
+        df_logs.loc[index_session] = new_log_entry
+    # write to sheet        
+    conn.update(worksheet="chat_logs", data=df_logs)
+
 
 def initialize_conversation(system_prompt):
     """Initialize the conversation history with system and assistant messages."""
@@ -263,6 +291,9 @@ def main():
             role = message["role"]
             with st.chat_message(role):
                 st.write(message["content"])
+        # Log conversations
+        if len(st.session_state.history) > 1:
+            log_conversation(st.session_state.history)
     
     # user activity logging
     user_worksheet = uid
