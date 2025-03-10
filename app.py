@@ -3,6 +3,9 @@ import pandas as pd
 import openai
 import json
 from pydantic import BaseModel
+from streamlit_gsheets import GSheetsConnection
+from datetime import datetime
+import uuid
 
 # retrieve and validate API keys 
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", None)
@@ -15,6 +18,9 @@ client = openai.OpenAI()
 
 # constants
 NUMBER_OF_MESSAGES_TO_DISPLAY = 20
+
+# create a connection object for google sheet
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # week_titles = [
 #     "0: Preperations",
@@ -76,11 +82,14 @@ def initialize_session_state():
         st.session_state.history = []
     if "conversation_history" not in st.session_state:
         st.session_state.conversation_history = []
-    # Store the previously selected week so we can detect changes
+    # store the previously selected week so we can detect changes
     if "prev_week" not in st.session_state:
         st.session_state.prev_week = weeks[0]
     if "week" not in st.session_state:
         st.session_state.week = weeks[0]
+    # generate session id for tracking
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
 
 def setup_side_bar():
     """Show the radio for selecting the current week. 
@@ -153,7 +162,7 @@ def setup_main_page():
 
         chat_intro = """ 
                         Elke avond check je hier in bij de AI-chat – een paar minuten is genoeg! 🤖💬 
-                        Deel hoe het ging: vond je de opdracht nuttig, uitdagend, irritant of juist verhelderend? 
+                        Reflecteer hoe het ging: vond je de opdracht nuttig, uitdagend, irritant of juist verhelderend? 
                         Alles is goed! Dit moment van reflectie helpt je om inzichten op te doen en bewuster met je proces bezig te zijn. 
                         Hoe vaker je dit doet, hoe meer je eruit haalt. Dus neem dat moment voor jezelf! 🚀✨
                          """
@@ -221,6 +230,8 @@ def on_chat_submit(chat_input):
 # ========= Main App ========= #
 
 def main():
+    # retrieve uid
+    uid = st.query_params["uid"]
     initialize_session_state()
     setup_side_bar()
     setup_main_page()
@@ -238,12 +249,26 @@ def main():
         #chat_input = st.chat_input("Type your message here...") 
         if chat_input:
             on_chat_submit(chat_input)
+            # log user activity
+            #print(f'user {uid} used chat')
 
         # Display conversation
         for message in st.session_state.history[-20:]:
             role = message["role"]
             with st.chat_message(role):
                 st.write(message["content"])
+    
+    # activity logging
+    user_worksheet = uid
+    new_log_entry = [datetime.now().strftime("%Y/%m/%d %H:%M:%S"), 
+                    st.session_state.session_id, 
+                    f'user {uid} opened {st.session_state.week}']
+    df_logs = conn.read(worksheet=user_worksheet, usecols=[0,1,2], ttl=0)
+    df_logs.loc[len(df_logs)] = new_log_entry
+    conn.update(worksheet=user_worksheet, data=df_logs)
+
+
+
 
 if __name__ == "__main__":
     main()
