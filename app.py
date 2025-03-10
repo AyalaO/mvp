@@ -249,8 +249,14 @@ def main():
         #chat_input = st.chat_input("Type your message here...") 
         if chat_input:
             on_chat_submit(chat_input)
-            # log user activity
-            #print(f'user {uid} used chat')
+            # log user chat activity
+            user_worksheet = uid
+            new_log_entry = [datetime.now().strftime("%Y/%m/%d %H:%M:%S"), 
+                            st.session_state.session_id, 
+                            f'user {uid} used chat']
+            df_logs = conn.read(worksheet=user_worksheet, usecols=[0,1,2], ttl=0)
+            df_logs.loc[len(df_logs)] = new_log_entry
+            conn.update(worksheet=user_worksheet, data=df_logs)
 
         # Display conversation
         for message in st.session_state.history[-20:]:
@@ -258,7 +264,7 @@ def main():
             with st.chat_message(role):
                 st.write(message["content"])
     
-    # activity logging
+    # user activity logging
     user_worksheet = uid
     new_log_entry = [datetime.now().strftime("%Y/%m/%d %H:%M:%S"), 
                     st.session_state.session_id, 
