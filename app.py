@@ -16,7 +16,7 @@ client = openai.OpenAI()
 # constants
 NUMBER_OF_MESSAGES_TO_DISPLAY = 20
 
-# weeks = [
+# week_titles = [
 #     "0: Preperations",
 #     "1: Pause Before Reacting",
 #     "2: Notice Your Fullness",
@@ -28,16 +28,28 @@ NUMBER_OF_MESSAGES_TO_DISPLAY = 20
 #     "8: Move Mindfully"
 # ]
 
+week_titles = {
+    "Introductie": "Introductie",
+    "Week 1": "De kunst van even pauzeren",
+    "Week 2": "Let op verzadiging",
+    "Week 3": "Duidelijkheid & consistentie",
+    "Week 4": "Herken automatische gedachten",
+    "Week 5": "Voel emoties volledig",
+    "Week 6": "Oefen zelfcompassie",
+    "Week 7": "Laat los",
+    "Week 8": "Beweeg bewust"
+}
+
 weeks = [
-    "0: Introductie",
-    "1: Pauzeer voor je reageert",
-    "2: Let op verzadiging",
-    "3: Duidelijkheid & consistentie",
-    "4: Herken automatische gedachten",
-    "5: Voel emoties volledig",
-    "6: Oefen zelfcompassie",
-    "7: Laat los",
-    "8: Beweeg bewust"
+    "Introductie", 
+    "Week 1", 
+    # "Week 2", 
+    # "Week 3", 
+    # "Week 4", 
+    # "Week 5", 
+    # "Week 6", 
+    # "Week 7", 
+    # "Week 8", 
 ]
 
 
@@ -48,13 +60,13 @@ system_prompts = {}
 # read in all data
 for i in weeks:
     # replace these lines with your real file paths
-    with open(f'intros_eng/week_{i[0]}.txt', "r") as file:
+    with open(f'intros_nl/week_{i[-1]}.txt', "r") as file:
         intros[i] = file.read()
 
-    with open(f'practices_eng/week_{i[0]}.txt', "r") as file:
+    with open(f'practices_nl/week_{i[-1]}.txt', "r") as file:
         practices[i] = file.read()
 
-    with open(f'prompts/week_{i[0]}.txt', "r") as file:
+    with open(f'prompts/week_{i[-1]}.txt', "r") as file:
         system_prompts[i] = file.read()
 
 
@@ -75,7 +87,12 @@ def setup_side_bar():
        If the user changed the selection, reset session state accordingly."""
     st.sidebar.image("imgs/logo_bitewise.png")
 
-    selected_week = st.sidebar.radio("Wekelijkse opdracht", weeks, index=0, disabled=False)
+    selected_week = st.sidebar.radio("Kies een week", weeks, index=0, disabled=False)
+
+    st.sidebar.markdown(
+        f"""<span style="color:#FF6632;">{"Week 2 is beschikbaar vanaf 17 maart."}</span>""",
+        unsafe_allow_html=True
+    )
 
     # If the user has switched to a new week
     if selected_week != st.session_state.prev_week:
@@ -97,53 +114,61 @@ def setup_main_page():
     st.markdown(
         f"""
         <span style="font-size:30px; color:#FF6632; font-weight:bold;">
-            {st.session_state.week[3:]}
+            {week_titles[st.session_state.week]}
         </span>
         """,
         unsafe_allow_html=True
     )    
     st.write("")
-    
+
     # 2) Hard coded week intro
     st.markdown(
         f"""<span style="color:#26293A;">{intros[st.session_state.week]}</span>""",
         unsafe_allow_html=True
     )
     
-    # 2) Weekly exercise
-    # CSS to style the expander
-    st.markdown(
-        """
-        <style>
-        [data-testid="stExpander"] {
-            background-color: #FCEFD9 !important;
-            border-radius: 10px !important;
-            overflow: hidden !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    with st.expander("**Toon opdracht van de week**", expanded=False):
+    if st.session_state.week != weeks[0]:
+        # 2) Weekly exercise
+        # CSS to style the expander
         st.markdown(
-            f"""<span style="color:#26293A;">{practices[st.session_state.week]}</span>""",
+            """
+            <style>
+            [data-testid="stExpander"] {
+                background-color: #FCEFD9 !important;
+                border-radius: 10px !important;
+                overflow: hidden !important;
+            }
+            </style>
+            """,
             unsafe_allow_html=True
         )
-    
-     # Chat section
-    st.markdown(
-        """
-        <span style="font-size:30px; color:#FF6632; font-weight:bold;">
-            AI Chat
-        </span>
-        """,
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        f"""<span style="color:#26293A;">{"Chat elke avond"}</span>""",
-        unsafe_allow_html=True
-    )
+
+        with st.expander("**Toon opdracht van de week**", expanded=False):
+            st.markdown(
+                f"""<span style="color:#26293A;">{practices[st.session_state.week]}</span>""",
+                unsafe_allow_html=True
+            )
+        
+        # Chat section
+
+        chat_intro = """ 
+                        Elke avond check je hier in bij de AI-chat – een paar minuten is genoeg! 🤖💬 
+                        Deel hoe het ging: vond je de opdracht nuttig, uitdagend, irritant of juist verhelderend? 
+                        Alles is goed! Dit moment van reflectie helpt je om inzichten op te doen en bewuster met je proces bezig te zijn. 
+                        Hoe vaker je dit doet, hoe meer je eruit haalt. Dus neem dat moment voor jezelf! 🚀✨
+                         """
+        st.markdown(
+            """
+            <span style="font-size:30px; color:#FF6632; font-weight:bold;">
+                AI Chat
+            </span>
+            """,
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"""<span style="color:#26293A;">{chat_intro}</span>""",
+            unsafe_allow_html=True
+        )
 
 # ========= Chat Logic ========= #    
 
@@ -208,16 +233,17 @@ def main():
             "content": "Waarmee kan ik je vandaag helpen.."
         })
 
-    chat_input = st.chat_input("Typ hier je bericht...") 
-    #chat_input = st.chat_input("Type your message here...") 
-    if chat_input:
-        on_chat_submit(chat_input)
+    if st.session_state.week != weeks[0]:
+        chat_input = st.chat_input("Typ hier je bericht...") 
+        #chat_input = st.chat_input("Type your message here...") 
+        if chat_input:
+            on_chat_submit(chat_input)
 
-    # Display conversation
-    for message in st.session_state.history[-20:]:
-        role = message["role"]
-        with st.chat_message(role):
-            st.write(message["content"])
+        # Display conversation
+        for message in st.session_state.history[-20:]:
+            role = message["role"]
+            with st.chat_message(role):
+                st.write(message["content"])
 
 if __name__ == "__main__":
     main()
