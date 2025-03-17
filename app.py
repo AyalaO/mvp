@@ -49,7 +49,7 @@ week_titles = {
 weeks = [
     "Introductie", 
     "Week 1", 
-    # "Week 2", 
+    "Week 2", 
     # "Week 3", 
     # "Week 4", 
     # "Week 5", 
@@ -99,7 +99,7 @@ def setup_side_bar():
     selected_week = st.sidebar.radio("Kies een week", weeks, index=0, disabled=False)
 
     st.sidebar.markdown(
-        f"""<span style="color:#FF6632;">{"Week 2 is beschikbaar vanaf 17 maart."}</span>""",
+        f"""<span style="color:#FF6632;">{"Week 3 is beschikbaar vanaf 24 maart."}</span>""",
         unsafe_allow_html=True
     )
 
