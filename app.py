@@ -16,7 +16,7 @@ if not OPENAI_API_KEY:
 openai.api_key = OPENAI_API_KEY
 client = openai.OpenAI()
 
-# constants
+# constants 
 NUMBER_OF_MESSAGES_TO_DISPLAY = 20
 
 # create a connection object for google sheet
@@ -37,8 +37,8 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 week_titles = {
     "Introductie": "Introductie",
     "Week 1": "De kunst van even pauzeren",
-    "Week 2": "Let op verzadiging",
-    "Week 3": "Duidelijkheid & consistentie",
+    "Week 2": "Voel wanneer je genoeg hebt",
+    "Week 3": "Duidelijkheid & regelmaat",
     "Week 4": "Herken automatische gedachten",
     "Week 5": "Voel emoties volledig",
     "Week 6": "Oefen zelfcompassie",
@@ -50,7 +50,7 @@ weeks = [
     "Introductie", 
     "Week 1", 
     "Week 2", 
-    # "Week 3", 
+    "Week 3", 
     # "Week 4", 
     # "Week 5", 
     # "Week 6", 
@@ -99,7 +99,7 @@ def setup_side_bar():
     selected_week = st.sidebar.radio("Kies een week", weeks, index=0, disabled=False)
 
     st.sidebar.markdown(
-        f"""<span style="color:#FF6632;">{"Week 3 is beschikbaar vanaf 24 maart."}</span>""",
+        f"""<span style="color:#FF6632;">{"Week 4 is beschikbaar vanaf 31 maart."}</span>""",
         unsafe_allow_html=True
     )
 
