@@ -51,11 +51,11 @@ weeks = [
     "Week 1", 
     "Week 2", 
     "Week 3", 
-    # "Week 4", 
-    # "Week 5", 
-    # "Week 6", 
-    # "Week 7", 
-    # "Week 8", 
+    "Week 4", 
+    "Week 5", 
+    "Week 6", 
+    "Week 7", 
+    "Week 8", 
 ]
 
 
@@ -98,10 +98,10 @@ def setup_side_bar():
 
     selected_week = st.sidebar.radio("Kies een week", weeks, index=0, disabled=False)
 
-    st.sidebar.markdown(
-        f"""<span style="color:#FF6632;">{"Week 4 is beschikbaar vanaf 31 maart."}</span>""",
-        unsafe_allow_html=True
-    )
+    # st.sidebar.markdown(
+    #     f"""<span style="color:#FF6632;">{"Week 4 is beschikbaar vanaf 31 maart."}</span>""",
+    #     unsafe_allow_html=True
+    # )
 
     # If the user has switched to a new week
     if selected_week != st.session_state.prev_week:
